@@ -1,6 +1,6 @@
 ﻿namespace WebApi.Contracts.Responses
 {
-    public class MeterReadingsUploadResponse
+    public class MeterReadingUploadsResponse
     {
         public required int ReadingsAddedSuccessfully { get; init; }
         public required int ReadingsAddedFailed { get; init; }

@@ -1,10 +1,5 @@
-﻿using CsvHelper;
-using DataAccess.Entities;
-using ExcelDataReader;
-using FastEndpoints;
-using LanguageExt;
+﻿using FastEndpoints;
 using Microsoft.AspNetCore.Http.HttpResults;
-using System.Globalization;
 using WebApi.Contracts.Requests;
 using WebApi.Contracts.Responses;
 using WebApi.MeterReadings.Interfaces;
@@ -12,13 +7,16 @@ using WebApi.MeterReadings.Interfaces;
 namespace WebApi.MeterReadings.Endpoints
 {
     public class MeterReadingUploadsEndpoint :
-        Endpoint<MeterReadingUploadsRequest, Ok<MeterReadingsUploadResponse>>
+        Endpoint<MeterReadingUploadsRequest, Ok<MeterReadingUploadsResponse>>
     {
         private readonly IMeterReadingService _meterReadingService;
+        private readonly IMeterReadingFileUploadsProcess _fileUploadProcess;
 
-        public MeterReadingUploadsEndpoint(IMeterReadingService meterReadingService)
+        public MeterReadingUploadsEndpoint(IMeterReadingService meterReadingService,
+            IMeterReadingFileUploadsProcess fileUploadProcess)
         {
             _meterReadingService = meterReadingService;
+            _fileUploadProcess = fileUploadProcess;
         }
 
         public override void Configure()
@@ -28,121 +26,20 @@ namespace WebApi.MeterReadings.Endpoints
             AllowFileUploads();
         }
 
-        public override async Task<Ok<MeterReadingsUploadResponse>>
+        public override async Task<Ok<MeterReadingUploadsResponse>>
             ExecuteAsync(MeterReadingUploadsRequest req, CancellationToken ct)
         {
-            List<FileMeterReadingEntry> entries = req.File.ContentType switch
-            {
-                "text/csv" => ReadCsvFile(req.File),
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => ReadExcelFile(req.File),
-                _ => throw new ArgumentException("Unsupported file type."),
-            };
+            var processedInfo = _fileUploadProcess.Process(req.File);
 
-            var validEntries = GetValidEntries(entries);
+            var result = await _meterReadingService.ImportMultipleAsync(processedInfo.ValidEntries);
 
-            var result = await _meterReadingService.ImportMultipleAsync(validEntries);
-
-            var response = new MeterReadingsUploadResponse
+            var response = new MeterReadingUploadsResponse
             {
                 ReadingsAddedSuccessfully = result,
-                ReadingsAddedFailed = entries.Count - result
+                ReadingsAddedFailed = processedInfo.NumberOfProcessedEntries - result
             };
 
             return TypedResults.Ok(response);
-        }
-
-        private static List<MeterReading> GetValidEntries(List<FileMeterReadingEntry> entries)
-        {
-            var validEntries = new List<MeterReading>();
-
-            foreach(var entry in entries)
-            {
-                if (!int.TryParse(entry.AccountId, out int accountId))
-                {
-                    continue;
-                }
-
-                if (!DateTime.TryParse(entry.MeterReadingDateTime, out DateTime readingDateTime))
-                {
-                    continue;
-                }
-
-                if (!int.TryParse(entry.MeterReadValue, out int meterReadValue))
-                {
-                    continue;
-                }
-
-                if (meterReadValue > 99999 || meterReadValue < 0)
-                {
-                    continue;
-                }
-
-                validEntries.Add(new MeterReading
-                {
-                    AccountId = accountId,
-                    ReadingDateTime = readingDateTime,
-                    ReadValue = string.Format("{0:00000}", meterReadValue)
-                });
-            }
-
-            return validEntries;
-        }
-
-        private class FileMeterReadingEntry
-        {
-            public string AccountId { get; set; }
-            public string MeterReadingDateTime { get; set; }
-            public string MeterReadValue { get; set; }
-        }
-
-        private static List<FileMeterReadingEntry> ReadCsvFile(IFormFile file)
-        {
-            var entries = new List<FileMeterReadingEntry>();
-            using (var stream = new MemoryStream())
-            {
-                file.CopyTo(stream);
-                stream.Position = 0;
-                using (var reader = new StreamReader(stream))
-                using (var csvReader = new CsvReader(reader, CultureInfo.InvariantCulture))
-                {
-                    entries = csvReader.GetRecords<FileMeterReadingEntry>().ToList();
-                }
-            }
-
-            return entries;
-        }
-
-        private static List<FileMeterReadingEntry> ReadExcelFile(IFormFile file)
-        {
-            var entries = new List<FileMeterReadingEntry>();
-            var header = true;
-
-            using (var stream = new MemoryStream())
-            {
-                file.CopyTo(stream);
-                stream.Position = 0;
-                using (var reader = ExcelReaderFactory.CreateReader(stream))
-                {
-                    while (reader.Read())
-                    {
-                        if (header)
-                        {
-                            header = false;
-                            continue;
-                        }
-
-                        entries.Add(
-                            new FileMeterReadingEntry 
-                            { 
-                                AccountId = reader.GetValue(0)?.ToString(), 
-                                MeterReadingDateTime = reader.GetValue(1)?.ToString(), 
-                                MeterReadValue = reader.GetValue(2)?.ToString() 
-                            });
-                    }
-                }
-            }
-
-            return entries;
         }
     }
 }

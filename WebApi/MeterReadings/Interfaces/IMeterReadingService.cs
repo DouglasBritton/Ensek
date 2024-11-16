@@ -1,5 +1,4 @@
 ﻿using DataAccess.Entities;
-using LanguageExt.Common;
 
 namespace WebApi.MeterReadings.Interfaces
 {

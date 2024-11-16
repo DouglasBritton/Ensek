@@ -1,7 +1,6 @@
 ﻿using DataAccess;
 using DataAccess.Entities;
 using FluentValidation;
-using LanguageExt.Common;
 using Microsoft.EntityFrameworkCore;
 using WebApi.MeterReadings.Interfaces;
 
@@ -20,7 +19,7 @@ namespace WebApi.MeterReadings
 
         public async Task<int> ImportMultipleAsync(List<MeterReading> meterReadings)
         {
-            foreach(var meterReading in meterReadings)
+            foreach (var meterReading in meterReadings)
             {
                 var validationResult = await _validator.ValidateAsync(meterReading);
                 if (!validationResult.IsValid)
@@ -38,11 +37,11 @@ namespace WebApi.MeterReadings
                     .Where(x => x.AccountId == meterReading.AccountId)
                     .OrderByDescending(x => x.ReadingDateTime)
                     .FirstOrDefaultAsync();
-                if(newestMeterReadingInDb != null && newestMeterReadingInDb.ReadingDateTime >= meterReading.ReadingDateTime)
+                if (newestMeterReadingInDb != null && newestMeterReadingInDb.ReadingDateTime >= meterReading.ReadingDateTime)
                 {
                     continue;
                 }
-                
+
                 await _dbContext.MeterReadings.AddAsync(meterReading);
             }
 

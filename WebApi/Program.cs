@@ -17,7 +17,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(optionsBuilder =>
 });
 
 builder.Services.AddScoped<IMeterReadingService, MeterReadingService>();
-
+builder.Services.AddScoped<IMeterReadingFileUploadsProcess, MeterReadingFileUploadsProcess>();
 builder.Services.AddScoped<IValidator<MeterReading>, MeterReadingValidator>();
 
 var app = builder.Build();
