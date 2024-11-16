@@ -31,23 +31,16 @@ namespace WebApi.MeterReadings.Endpoints
         public override async Task<Ok<MeterReadingsUploadResponse>>
             ExecuteAsync(MeterReadingUploadsRequest req, CancellationToken ct)
         {
-            int numberOfTotalEntries;
-            List<FileMeterReadingEntry> entries;
-
-            switch (req.File.ContentType)
+            List<FileMeterReadingEntry> entries = req.File.ContentType switch
             {
-                case "text/csv":
-                    entries = ReadCsvFile(req.File);
-                    break;
-                case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-                    entries = ReadExcelFile(req.File);
-                    break;
-                default: throw new ArgumentException("Unsupported file type.");
-            }
+                "text/csv" => ReadCsvFile(req.File),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => ReadExcelFile(req.File),
+                _ => throw new ArgumentException("Unsupported file type."),
+            };
 
             var validEntries = GetValidEntries(entries);
 
-            var result = 1;// await _meterReadingService.ImportMultipleAsync(validEntries);
+            var result = await _meterReadingService.ImportMultipleAsync(validEntries);
 
             var response = new MeterReadingsUploadResponse
             {
@@ -58,7 +51,7 @@ namespace WebApi.MeterReadings.Endpoints
             return TypedResults.Ok(response);
         }
 
-        private List<MeterReading> GetValidEntries(List<FileMeterReadingEntry> entries)
+        private static List<MeterReading> GetValidEntries(List<FileMeterReadingEntry> entries)
         {
             var validEntries = new List<MeterReading>();
 
@@ -88,7 +81,7 @@ namespace WebApi.MeterReadings.Endpoints
                 {
                     AccountId = accountId,
                     ReadingDateTime = readingDateTime,
-                    ReadValue = meterReadValue
+                    ReadValue = string.Format("{0:00000}", meterReadValue)
                 });
             }
 
@@ -102,7 +95,7 @@ namespace WebApi.MeterReadings.Endpoints
             public string MeterReadValue { get; set; }
         }
 
-        private List<FileMeterReadingEntry> ReadCsvFile(IFormFile file)
+        private static List<FileMeterReadingEntry> ReadCsvFile(IFormFile file)
         {
             var entries = new List<FileMeterReadingEntry>();
             using (var stream = new MemoryStream())
