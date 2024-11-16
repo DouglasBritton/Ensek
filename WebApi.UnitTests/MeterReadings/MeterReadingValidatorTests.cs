@@ -6,7 +6,9 @@ namespace WebApi.UnitTests.MeterReadings
     [TestClass]
     public class MeterReadingValidatorTests
     {
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private MeterReadingValidator _validator;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
         [TestInitialize]
         public void Setup()

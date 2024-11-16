@@ -27,8 +27,8 @@ namespace WebApi.UnitTests.MeterReadings.Endpoints
             var data = new FileProcessedModel 
             {
                 TotalProcessedEntries = 15,
-                ValidEntries = new List<MeterReading>
-                {
+                ValidEntries =
+                [
                     new MeterReading
                     {
                         AccountId = 1,
@@ -53,7 +53,7 @@ namespace WebApi.UnitTests.MeterReadings.Endpoints
                         ReadingDateTime = new DateTime(2024, 12, 16, 0, 0, 0, DateTimeKind.Utc),
                         ReadValue = "01260"
                     }
-                }
+                ]
             };
             var fakeMeterReadingFileUploadsProcess = A.Fake<IMeterReadingFileUploadsProcess>();
             A.CallTo(() => fakeMeterReadingFileUploadsProcess.ProcessAsync(file.Object)).Returns(Task.FromResult(data));
@@ -69,8 +69,8 @@ namespace WebApi.UnitTests.MeterReadings.Endpoints
 
             // Assert
             Assert.AreEqual(StatusCodes.Status200OK, rsp.StatusCode);
-            Assert.AreEqual(3, rsp.Value.ReadingsAddedSuccessfully);
-            Assert.AreEqual(12, rsp.Value.ReadingsAddedFailed);
+            Assert.AreEqual(3, rsp?.Value?.ReadingsAddedSuccessfully);
+            Assert.AreEqual(12, rsp?.Value?.ReadingsAddedFailed);
         }
     }
 }

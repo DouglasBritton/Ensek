@@ -26,9 +26,9 @@ namespace WebApi.MeterReadings
 
         private class FileMeterReadingEntry
         {
-            public string AccountId { get; set; }
-            public string MeterReadingDateTime { get; set; }
-            public string MeterReadValue { get; set; }
+            public string? AccountId { get; set; }
+            public string? MeterReadingDateTime { get; set; }
+            public string? MeterReadValue { get; set; }
         }
 
         private static async Task<List<FileMeterReadingEntry>> ReadCsvFileAsync(IFormFile file)
@@ -83,7 +83,7 @@ namespace WebApi.MeterReadings
             return entries;
         }
 
-        private List<MeterReading> GetValidEntries(List<FileMeterReadingEntry> entries)
+        private static List<MeterReading> GetValidEntries(List<FileMeterReadingEntry> entries)
         {
             var validEntries = new List<MeterReading>();
 
