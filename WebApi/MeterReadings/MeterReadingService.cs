@@ -18,7 +18,7 @@ namespace WebApi.MeterReadings
             _dbContext = dbContext;
         }
 
-        public async Task<List<MeterReading>> ImportMultipleAsync(List<MeterReading> meterReadings)
+        public async Task<int> ImportMultipleAsync(List<MeterReading> meterReadings)
         {
             foreach(var meterReading in meterReadings)
             {
@@ -34,18 +34,19 @@ namespace WebApi.MeterReadings
                     continue;
                 }
 
-                var newestReadingDateTime = account?.MeterReadings?.Max(meterReading => meterReading.ReadingDateTime);
-                if(newestReadingDateTime >= meterReading.ReadingDateTime)
+                var newestMeterReadingInDb = await _dbContext.MeterReadings
+                    .Where(x => x.AccountId == meterReading.AccountId)
+                    .OrderByDescending(x => x.ReadingDateTime)
+                    .FirstOrDefaultAsync();
+                if(newestMeterReadingInDb != null && newestMeterReadingInDb.ReadingDateTime >= meterReading.ReadingDateTime)
                 {
                     continue;
                 }
-
+                
                 await _dbContext.MeterReadings.AddAsync(meterReading);
             }
 
-            await _dbContext.SaveChangesAsync();
-
-            return meterReadings;
+            return await _dbContext.SaveChangesAsync();
         }
     }
 }

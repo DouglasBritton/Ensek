@@ -33,7 +33,13 @@ namespace WebApi.MeterReadings.Endpoints
 
             var result = await _meterReadingService.ImportMultipleAsync(validEntries);
 
-            return TypedResults.Ok(result.MapToMeterReadingsUploadResponse(numberOfTotalEntries));
+            var response = new MeterReadingsUploadResponse
+            {
+                ReadingsAddedSuccessfully = result,
+                ReadingsAddedFailed = numberOfTotalEntries - result
+            };
+
+            return TypedResults.Ok(response);
         }
 
         private static List<MeterReading> ReadFile(IFormFile file, out int numberOfTotalEntries)
