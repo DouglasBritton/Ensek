@@ -7,6 +7,7 @@ namespace WebApi.MeterReadings
     {
         public MeterReadingValidator()
         {
+            RuleFor(x => x.AccountId).GreaterThan(0).WithMessage("The account id must be greater than 0.");
             RuleFor(x => x.ReadValue).Length(5).WithMessage("The reading value must be in the form 'NNNNN'.");
             RuleFor(x => x.ReadValue).Must(value => int.TryParse(value, out int result) && result >= 0).WithMessage("The reading value must be a positive number.");
         }

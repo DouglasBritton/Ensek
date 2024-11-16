@@ -8,8 +8,9 @@ namespace WebApi.Contracts.Validators
     {
         public MeterReadingUploadsRequestValidator()
         {
-            RuleFor(x => x.File).NotEmpty().WithMessage("A file must be sent.");
-            RuleFor(x => x.File.ContentType).Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").WithMessage("A file of xlsx type must be used.");
+            var acceptedFileTypes = new List<string>() { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv" };
+
+            RuleFor(x => x.File.ContentType).Must(x => acceptedFileTypes.Contains(x)).WithMessage("The file type provided is not supported.");
         }
     }
 }
