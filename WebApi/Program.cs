@@ -1,17 +1,15 @@
 using DataAccess;
+using DataAccess.Entities;
 using FastEndpoints;
+using FastEndpoints.Swagger;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using WebApi.Contracts.Services;
 using WebApi.MeterReadings;
-using WebApi.MeterReadings.Endpoints;
+using WebApi.MeterReadings.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddFastEndpoints();
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddFastEndpoints().SwaggerDocument();
 
 builder.Services.AddDbContext<ApplicationDbContext>(optionsBuilder =>
 {
@@ -19,21 +17,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(optionsBuilder =>
 });
 
 builder.Services.AddScoped<IMeterReadingService, MeterReadingService>();
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+builder.Services.AddScoped<IValidator<MeterReading>, MeterReadingValidator>();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     await DevEnvironmentOnlyDatabaseSetup(app);
-
-    //TODO change to app.UseFastEndpoints().UseSwagger()
-    //app.UseFastEndpoints().UseSwaggerUI() ?
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 
-app.UseFastEndpoints();
+app.UseFastEndpoints().UseSwaggerGen();
 
 app.UseHttpsRedirection();
 

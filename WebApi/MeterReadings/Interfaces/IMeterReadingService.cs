@@ -1,7 +1,7 @@
 ﻿using DataAccess.Entities;
 using LanguageExt.Common;
 
-namespace WebApi.Contracts.Services
+namespace WebApi.MeterReadings.Interfaces
 {
     public interface IMeterReadingService
     {
@@ -10,6 +10,6 @@ namespace WebApi.Contracts.Services
         /// </summary>
         /// <param name="meterReadings">A list of meter readings.</param>
         /// <returns>The meter readings that were successfully added to the database.</returns>
-        Task<Result<List<MeterReading>>> CreateMultipleAsync(List<MeterReading> meterReadings);
+        Task<List<MeterReading>> ImportMultipleAsync(List<MeterReading> meterReadings);
     }
 }

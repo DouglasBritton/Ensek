@@ -1,6 +1,6 @@
 ﻿namespace WebApi.Contracts.Requests
 {
-    public class MeterReadingsUploadRequest
+    public class MeterReadingUploadsRequest
     {
         public required IFormFile File { get; set; }
     }

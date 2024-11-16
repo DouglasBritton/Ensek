@@ -2,14 +2,15 @@
 using ExcelDataReader;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http.HttpResults;
+using WebApi.Contracts;
 using WebApi.Contracts.Requests;
 using WebApi.Contracts.Responses;
-using WebApi.Contracts.Services;
+using WebApi.MeterReadings.Interfaces;
 
 namespace WebApi.MeterReadings.Endpoints
 {
     public class MeterReadingUploadsEndpoint :
-        Endpoint<MeterReadingsUploadRequest, Results<Ok<MeterReadingsUploadResponse>, BadRequest>>
+        Endpoint<MeterReadingUploadsRequest, Ok<MeterReadingsUploadResponse>>
     {
         private readonly IMeterReadingService _meterReadingService;
 
@@ -25,74 +26,62 @@ namespace WebApi.MeterReadings.Endpoints
             AllowFileUploads();
         }
 
-        public override async Task<Results<Ok<MeterReadingsUploadResponse>, BadRequest>>
-            ExecuteAsync(MeterReadingsUploadRequest req, CancellationToken ct)
+        public override async Task<Ok<MeterReadingsUploadResponse>>
+            ExecuteAsync(MeterReadingUploadsRequest req, CancellationToken ct)
         {
-            //TODO check file is sent and check file accepted type
-            //if(Files.Count == 0)
-            //{
-            //    return (Results<Ok<MeterReadingsUploadResponse>, BadRequest>)Results.BadRequest("No file provided");
-            //}
+            var validEntries = ReadFile(req.File, out int numberOfTotalEntries);
 
-            var validEntries = await ReadFileAsync(Files[0]);
-            var result = await _meterReadingService.CreateMultipleAsync(validEntries);
+            var result = await _meterReadingService.ImportMultipleAsync(validEntries);
 
-
-
-
-            //TODO fix return types
-            return (Results<Ok<MeterReadingsUploadResponse>, BadRequest>)result.Match(
-                success => Results.Ok(new MeterReadingsUploadResponse { ReadingsAddedSuccessfully = success.Count, ReadingsAddedFailed = 5 - success.Count }),
-                failed => Results.BadRequest(failed.Message));
+            return TypedResults.Ok(result.MapToMeterReadingsUploadResponse(numberOfTotalEntries));
         }
 
-        //TODO change to AddMeterReadingModel
-        private static async Task<List<MeterReading>> ReadFileAsync(IFormFile file)
+        private static List<MeterReading> ReadFile(IFormFile file, out int numberOfTotalEntries)
         {
             var list = new List<MeterReading>();
-            var numberOfEntries = -1;
+            numberOfTotalEntries = -1;
 
             using (var stream = new MemoryStream())
             {
-                await file.CopyToAsync(stream);
+                file.CopyTo(stream);
                 stream.Position = 0;
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
                     while (reader.Read())
                     {
-                        if (numberOfEntries == -1)
+                        if (numberOfTotalEntries == -1)
                         {
-                            numberOfEntries++;
+                            numberOfTotalEntries++;
                             continue;
                         }
 
                         if (!int.TryParse(reader.GetValue(0)?.ToString(), out int accountIdCell))
                         {
-                            numberOfEntries++;
+                            numberOfTotalEntries++;
                             continue;
                         }
 
                         if (!DateTime.TryParse(reader.GetValue(1)?.ToString(), out DateTime readingDateTimeCell))
                         {
-                            numberOfEntries++;
+                            numberOfTotalEntries++;
                             continue;
                         }
 
                         if (!int.TryParse(reader.GetValue(2)?.ToString(), out int readValue))
                         {
-                            numberOfEntries++;
+                            numberOfTotalEntries++;
                             continue;
                         }
 
                         if (readValue > 99999 || readValue < 0)
                         {
-                            numberOfEntries++;
+                            numberOfTotalEntries++;
                             continue;
                         }
 
                         list.Add(new MeterReading { AccountId = accountIdCell, ReadingDateTime = readingDateTimeCell, ReadValue = string.Format("{0:00000}", readValue) });
 
-                        numberOfEntries++;
+                        numberOfTotalEntries++;
                     }
                 }
             }

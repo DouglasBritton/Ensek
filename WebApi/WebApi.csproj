@@ -9,13 +9,13 @@
   <ItemGroup>
     <PackageReference Include="ExcelDataReader" Version="3.7.0" />
     <PackageReference Include="FastEndpoints" Version="5.31.0" />
+    <PackageReference Include="FastEndpoints.Swagger" Version="5.31.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
     <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
   <ItemGroup>
