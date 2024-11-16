@@ -29,14 +29,14 @@ namespace WebApi.MeterReadings.Endpoints
         public override async Task<Ok<MeterReadingUploadsResponse>>
             ExecuteAsync(MeterReadingUploadsRequest req, CancellationToken ct)
         {
-            var (validEntries, numberOfProcessedEntries) = _fileUploadProcess.Process(req.File);
+            var fileProcessedInfo = await _fileUploadProcess.ProcessAsync(req.File);
 
-            var result = await _meterReadingService.ImportMultipleAsync(validEntries);
+            var result = await _meterReadingService.ImportMultipleAsync(fileProcessedInfo.ValidEntries);
 
             var response = new MeterReadingUploadsResponse
             {
                 ReadingsAddedSuccessfully = result,
-                ReadingsAddedFailed = numberOfProcessedEntries - result
+                ReadingsAddedFailed = fileProcessedInfo.TotalProcessedEntries - result
             };
 
             return TypedResults.Ok(response);

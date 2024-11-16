@@ -8,16 +8,20 @@ namespace WebApi.MeterReadings
 {
     public class MeterReadingFileUploadsProcess : IMeterReadingFileUploadsProcess
     {
-        public (List<MeterReading> ValidEntries, int NumberOfProcessedEntries) Process(IFormFile file)
+        public async Task<FileProcessedModel> ProcessAsync(IFormFile file)
         {
             List<FileMeterReadingEntry> entries = file.ContentType switch
             {
-                "text/csv" => ReadCsvFile(file),
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => ReadExcelFile(file),
+                "text/csv" => await ReadCsvFileAsync(file),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => await ReadExcelFileAsync(file),
                 _ => throw new ArgumentException("Unsupported file type."),
             };
 
-            return (GetValidEntries(entries), entries.Count);
+            return new FileProcessedModel
+            {
+                TotalProcessedEntries = entries.Count,
+                ValidEntries = GetValidEntries(entries),
+            };
         }
 
         private class FileMeterReadingEntry
@@ -27,12 +31,12 @@ namespace WebApi.MeterReadings
             public string MeterReadValue { get; set; }
         }
 
-        private static List<FileMeterReadingEntry> ReadCsvFile(IFormFile file)
+        private static async Task<List<FileMeterReadingEntry>> ReadCsvFileAsync(IFormFile file)
         {
             var entries = new List<FileMeterReadingEntry>();
             using (var stream = new MemoryStream())
             {
-                file.CopyTo(stream);
+                await file.CopyToAsync(stream);
                 stream.Position = 0;
                 using (var reader = new StreamReader(stream))
                 {
@@ -46,14 +50,14 @@ namespace WebApi.MeterReadings
             return entries;
         }
 
-        private static List<FileMeterReadingEntry> ReadExcelFile(IFormFile file)
+        private static async Task<List<FileMeterReadingEntry>> ReadExcelFileAsync(IFormFile file)
         {
             var entries = new List<FileMeterReadingEntry>();
             var header = true;
 
             using (var stream = new MemoryStream())
             {
-                file.CopyTo(stream);
+                await file.CopyToAsync(stream);
                 stream.Position = 0;
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
